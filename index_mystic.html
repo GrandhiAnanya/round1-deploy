@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b0820">
+<title>Chrono Explorers | Round 01: The Hidden Artifact</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#070519;--night:#0f0b2e;--panel:#1a1448;--panel2:#241b5c;--edge:#05030f;
+  --text:#efe9ff;--muted:#a99fd0;
+  --violet:#8b5cf6;--cyan:#22d3ee;--gold:#fbbf24;--pink:#f472b6;--mint:#34d399;--orange:#fb923c;
+  --r:22px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;min-height:100vh;color:var(--text);overflow-x:hidden;
+  font-family:Nunito,ui-rounded,system-ui,-apple-system,"Segoe UI",sans-serif;
+  background:
+    radial-gradient(ellipse at 50% -10%,rgba(139,92,246,.45),transparent 55%),
+    radial-gradient(ellipse at 90% 40%,rgba(34,211,238,.14),transparent 45%),
+    radial-gradient(ellipse at 5% 70%,rgba(244,114,182,.13),transparent 45%),
+    linear-gradient(180deg,#0b0820 0%,#150f3c 55%,#1f1250 100%);
+  background-attachment:fixed;
+}
+/* twinkling stars */
+body:before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20px 30px,#fff,transparent),
+    radial-gradient(1px 1px at 90px 120px,#cbb8ff,transparent),
+    radial-gradient(2px 2px at 160px 60px,#fff,transparent),
+    radial-gradient(1px 1px at 230px 170px,#9ff3ff,transparent),
+    radial-gradient(1.5px 1.5px at 310px 90px,#ffe7a1,transparent);
+  background-size:340px 210px;animation:twinkle 5s ease-in-out infinite alternate}
+/* giant slowly turning clock in the background */
+.bg-clock{position:fixed;left:50%;top:50%;width:min(1100px,150vw);aspect-ratio:1;transform:translate(-50%,-50%);z-index:-1;pointer-events:none;opacity:.16}
+.bg-clock svg{width:100%;height:100%;animation:spin 240s linear infinite}
+.fog{position:fixed;left:-20%;right:-20%;bottom:-60px;height:240px;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse at 30% 100%,rgba(139,92,246,.32),transparent 60%),radial-gradient(ellipse at 75% 100%,rgba(34,211,238,.2),transparent 60%);
+  filter:blur(18px);animation:fogmove 14s ease-in-out infinite alternate}
+
+h1,h2,h3,.brand-title,.btn,.card-number{font-family:Fredoka,Nunito,ui-rounded,system-ui,sans-serif}
+button,input{font:inherit}button{cursor:pointer}
+.hidden{display:none!important}
+.wrap{width:min(1180px,calc(100% - 32px));margin:auto}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:20;background:rgba(10,7,32,.82);backdrop-filter:blur(14px);border-bottom:3px solid var(--edge);box-shadow:0 1px 0 rgba(139,92,246,.45),0 10px 30px rgba(0,0,0,.35)}
+.nav{min-height:70px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:12px}
+.sigil{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--violet),var(--cyan));border:3px solid var(--edge);box-shadow:3px 3px 0 var(--edge),0 0 22px rgba(34,211,238,.55);display:grid;place-items:center;font-size:24px}
+.sigil span{display:inline-block;animation:spin 8s linear infinite}
+.brand-title{font-weight:700;font-size:20px;letter-spacing:.06em;line-height:1}
+.brand-sub{font-size:10px;font-weight:800;letter-spacing:.22em;color:var(--cyan);margin-top:5px;text-shadow:0 0 10px rgba(34,211,238,.6)}
+.nav-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.chip{background:var(--panel);border:3px solid var(--edge);border-radius:999px;padding:6px 14px;font-weight:800;font-size:12.5px;box-shadow:3px 3px 0 var(--edge),0 0 0 2px rgba(139,92,246,.4);display:flex;align-items:center;gap:8px;letter-spacing:.04em;white-space:nowrap}
+.chip strong{font-family:Fredoka,sans-serif;font-size:16px}
+.score-chip strong{background:var(--gold);color:#1d1240;border:2px solid var(--edge);border-radius:999px;padding:1px 11px;box-shadow:0 0 14px rgba(251,191,36,.6)}
+.clock-chip strong{color:var(--cyan);text-shadow:0 0 10px rgba(34,211,238,.8);font-variant-numeric:tabular-nums}
+.score-chip.bump strong{animation:pop .5s}
+
+/* hero */
+.hero{margin:28px 0 8px;display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);text-shadow:0 0 12px rgba(34,211,238,.45)}
+.status-dot{width:10px;height:10px;border-radius:50%;background:var(--pink);box-shadow:0 0 0 4px rgba(244,114,182,.28),0 0 14px var(--pink);animation:pulse 1.4s infinite}
+.hero h1{font-family:Cinzel,Georgia,serif;font-size:clamp(38px,6.4vw,76px);line-height:.98;margin:14px 0 20px;font-weight:800;letter-spacing:.02em;text-shadow:0 0 30px rgba(139,92,246,.7)}
+.hero h1 em{font-style:normal;display:inline-block;color:#fff;background:linear-gradient(120deg,var(--violet),var(--pink));padding:2px 18px 8px;border-radius:18px;border:4px solid var(--edge);box-shadow:6px 6px 0 var(--edge),0 0 34px rgba(244,114,182,.55);transform:rotate(-2deg);margin-top:10px}
+.intro{font-size:16px;line-height:1.75;color:#cfc6f2;max-width:560px;font-weight:600}
+.intro b{color:var(--gold);font-weight:800}
+.scene{border:4px solid var(--edge);border-radius:30px;overflow:hidden;box-shadow:8px 8px 0 var(--edge),0 0 0 3px rgba(139,92,246,.55),0 0 60px rgba(139,92,246,.4);background:#0b0820;position:relative}
+.scene svg{display:block;width:100%;height:auto}
+.scene .tag{position:absolute;left:14px;bottom:14px;background:var(--panel);border:3px solid var(--edge);border-radius:999px;padding:5px 12px;font-family:Fredoka,sans-serif;font-weight:600;font-size:13px;box-shadow:0 0 0 2px rgba(34,211,238,.5)}
+.scene .tag i{font-style:normal;color:var(--pink);animation:blink 1.2s steps(2) infinite}
+.sp{transform-box:fill-box;transform-origin:center}
+.s1{animation:spin 30s linear infinite}.s2{animation:spinr 18s linear infinite}.s3{animation:spin 60s linear infinite}
+.hand-m{animation:spin 6s linear infinite}.hand-h{animation:spin 72s linear infinite}
+.float{animation:bob 4s ease-in-out infinite}.float.d2{animation-delay:-1.3s}.float.d3{animation-delay:-2.4s}
+.tw{animation:twinkle 2.5s ease-in-out infinite alternate}.tw.b{animation-delay:-1.2s}
+
+/* panels */
+.panel{background:linear-gradient(160deg,var(--panel),#130e38);border:4px solid var(--edge);border-radius:28px;padding:clamp(20px,3vw,32px);box-shadow:8px 8px 0 var(--edge),0 0 0 2px rgba(139,92,246,.5),0 0 46px rgba(139,92,246,.22)}
+.login-panel{max-width:600px;margin:34px auto 70px;position:relative}
+.login-panel:before{content:"🔮";position:absolute;top:-34px;right:22px;font-size:58px;animation:bob 3.5s ease-in-out infinite;filter:drop-shadow(0 0 16px rgba(139,92,246,.9))}
+.section-head h2{margin:6px 0 0;font-size:28px;font-weight:700}
+.fineprint{color:var(--muted);font-size:13px;line-height:1.65;font-weight:600}
+.field{display:flex;flex-direction:column;gap:7px;margin:16px 0}
+.field label,.field .eyebrow{font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+input{width:100%;background:#0b0826;color:var(--text);border:3px solid var(--edge);border-radius:14px;padding:13px 15px;outline:none;font-weight:700;box-shadow:inset 0 0 0 2px rgba(139,92,246,.35);transition:box-shadow .15s,transform .15s}
+input::placeholder{color:#6d62a1}
+input:focus{box-shadow:inset 0 0 0 2px var(--cyan),0 0 20px rgba(34,211,238,.45);transform:translate(-1px,-1px)}
+input:disabled{background:#0f2a2a;color:var(--mint);box-shadow:inset 0 0 0 2px rgba(52,211,153,.5)}
+.btn{border:3px solid var(--edge);border-radius:999px;padding:12px 18px;font-weight:600;font-size:15px;letter-spacing:.03em;box-shadow:0 5px 0 var(--edge);transition:transform .12s,box-shadow .12s;text-decoration:none;color:var(--text);display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:hover{transform:translateY(-2px);box-shadow:0 7px 0 var(--edge)}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--edge)}
+.btn:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:0 3px 0 var(--edge)}
+.btn-primary{background:linear-gradient(120deg,var(--gold),var(--orange));color:#2a1448;box-shadow:0 5px 0 var(--edge),0 0 24px rgba(251,191,36,.4)}
+.btn-primary:hover{box-shadow:0 7px 0 var(--edge),0 0 34px rgba(251,191,36,.6)}
+.btn-secondary{background:var(--panel2);box-shadow:0 5px 0 var(--edge),inset 0 0 0 2px rgba(139,92,246,.55)}
+.btn-block{width:100%;margin-top:10px}
+.error{color:#ff8fa8;font-weight:800;font-size:14px;margin-top:12px}
+
+/* mission */
+.mission-bar{margin:26px 0;display:flex;justify-content:space-between;align-items:center;gap:18px;padding:20px 24px;background:linear-gradient(120deg,#1e1656,#2a1a63);border:4px solid var(--edge);border-radius:26px;box-shadow:6px 6px 0 var(--edge),0 0 0 2px rgba(34,211,238,.4),0 0 40px rgba(34,211,238,.15)}
+.mission-bar h2{margin:6px 0;font-size:clamp(22px,3vw,32px);font-weight:700}
+.mission-bar p{margin:0;color:var(--muted);font-size:14px;line-height:1.55;font-weight:600;max-width:520px}
+.progress-wrap{min-width:210px}
+.progress-count{font-family:Fredoka,sans-serif;font-weight:600;margin-bottom:8px;text-align:right}
+.progress-track{height:20px;background:#0b0826;border:3px solid var(--edge);border-radius:999px;overflow:hidden;box-shadow:inset 0 0 0 2px rgba(139,92,246,.35)}
+.progress-fill{height:100%;width:0;background:repeating-linear-gradient(45deg,var(--cyan) 0 12px,#7ae9fa 12px 24px);transition:width .5s cubic-bezier(.3,1.4,.5,1);box-shadow:0 0 16px var(--cyan)}
+.stars{display:flex;justify-content:flex-end;gap:6px;margin-top:8px;font-size:22px}
+.stars span{filter:grayscale(1) opacity(.3);transition:.3s}
+.stars span.on{filter:drop-shadow(0 0 8px var(--gold));animation:pop .5s}
+
+.question-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:26px}
+.question-card{--accent:var(--cyan);background:linear-gradient(170deg,#1d1552,#120d36);border:4px solid var(--edge);border-radius:var(--r);overflow:hidden;box-shadow:6px 6px 0 var(--edge),0 0 0 2px color-mix(in srgb,var(--accent) 60%,transparent),0 0 34px color-mix(in srgb,var(--accent) 28%,transparent);display:flex;flex-direction:column;min-width:0;transition:transform .2s,box-shadow .2s;animation:rise .6s both;position:relative}
+.question-card:hover{transform:translate(-2px,-5px) rotate(-.4deg);box-shadow:9px 12px 0 var(--edge),0 0 0 2px var(--accent),0 0 54px color-mix(in srgb,var(--accent) 55%,transparent)}
+.question-card.locked{background:linear-gradient(170deg,#0f2f2e,#0c1f2a)}
+.card-top{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#1a1448));border-bottom:4px solid var(--edge);color:#fff}
+.card-number{font-weight:600;font-size:14px;letter-spacing:.08em;text-shadow:1px 1px 0 rgba(0,0,0,.4)}
+.card-state{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;background:#0b0826;color:var(--text);border:2px solid var(--edge);border-radius:999px;padding:3px 10px;box-shadow:0 0 0 2px rgba(255,255,255,.2)}
+.question-card.locked .card-state{background:var(--mint);color:#06281c}
+.image-stage{height:210px;display:grid;place-items:center;position:relative;overflow:hidden;border-bottom:4px solid var(--edge);
+  background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--accent) 38%,transparent) 0,transparent 62%),repeating-linear-gradient(135deg,#150f3f 0 14px,#1a1348 14px 28px)}
+.image-stage:after{content:"";position:absolute;left:0;right:0;top:-30%;height:30%;z-index:3;pointer-events:none;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--accent) 35%,transparent),transparent);animation:scan 4.5s linear infinite}
+.image-stage img{width:100%;height:100%;object-fit:contain;position:relative;z-index:1;padding:8px;filter:drop-shadow(0 0 14px color-mix(in srgb,var(--accent) 55%,transparent))}
+.image-placeholder{font-size:78px;animation:bob 3s ease-in-out infinite;filter:drop-shadow(0 0 18px var(--accent))}
+.corner-emoji{position:absolute;z-index:4;right:10px;top:8px;font-size:28px;background:#0b0826;border:3px solid var(--edge);border-radius:50%;width:50px;height:50px;display:grid;place-items:center;transform:rotate(10deg);box-shadow:0 0 0 2px var(--accent),0 0 18px var(--accent)}
+.corner-rune{position:absolute;z-index:4;left:12px;bottom:8px;font-size:11px;font-weight:800;letter-spacing:.2em;color:var(--accent);text-shadow:0 0 10px var(--accent);opacity:.9}
+.card-body{padding:16px;display:flex;flex-direction:column;gap:12px;flex:1}
+.artifact-title{font-size:20px;margin:0;font-weight:700;line-height:1.15}
+.artifact-description{font-size:13.5px;line-height:1.55;color:var(--muted);min-height:42px;margin:0;font-weight:600}
+.card-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card-actions .btn{font-size:12.5px;padding:9px 6px;box-shadow:0 4px 0 var(--edge),inset 0 0 0 2px color-mix(in srgb,var(--accent) 70%,transparent)}
+.answer-form{margin-top:auto}
+.answer-form .btn{width:100%;margin-top:6px}
+.feedback{font-size:13px;line-height:1.45;min-height:20px;font-weight:800;margin-top:10px}
+.feedback.good{color:var(--mint)}.feedback.bad{color:#ff8fa8}
+
+.completion{margin:32px 0;text-align:center;padding:clamp(28px,6vw,60px);border:4px solid var(--edge);border-radius:30px;background:radial-gradient(circle at 50% 0,rgba(251,191,36,.35),transparent 60%),linear-gradient(135deg,#3a1f86,#7a2c8f);box-shadow:8px 8px 0 var(--edge),0 0 0 3px var(--gold),0 0 70px rgba(251,191,36,.4);animation:rise .6s both}
+.completion .fragment{font-family:Cinzel,serif;font-size:clamp(36px,8vw,76px);font-weight:800;color:var(--gold);margin:10px 0;text-shadow:0 0 30px rgba(251,191,36,.9),4px 4px 0 var(--edge);animation:glow 2.5s ease-in-out infinite}
+.completion h2{font-size:clamp(24px,4vw,38px);margin:6px;font-weight:700}
+.completion p{line-height:1.7;font-weight:700;color:#e9dcff}
+.completion .eyebrow{color:var(--gold)}
+
+.bottom-story{margin:36px 0 70px;padding:22px 24px;border:4px dashed rgba(139,92,246,.6);border-radius:24px;background:rgba(26,20,72,.55);display:flex;justify-content:space-between;gap:20px;align-items:center}
+.bottom-story h3{margin:6px 0;font-size:22px;font-weight:700}
+.bottom-story p{margin:0;color:var(--muted);font-size:14px;line-height:1.6;font-weight:600}
+
+.footer{border-top:3px solid rgba(139,92,246,.4);padding:20px 0 34px;color:var(--muted);font-weight:800;font-size:11px;letter-spacing:.14em;display:flex;justify-content:space-between;gap:12px}
+.toast{position:fixed;right:18px;bottom:18px;z-index:50;max-width:340px;padding:14px 18px;background:var(--panel2);border:3px solid var(--edge);border-radius:18px;box-shadow:5px 5px 0 var(--edge),0 0 0 2px var(--cyan),0 0 26px rgba(34,211,238,.4);font-weight:800;font-size:14px;animation:rise .3s both}
+
+/* sparks */
+.spark{position:fixed;bottom:-20px;border-radius:50%;z-index:60;pointer-events:none;animation:rise-up linear forwards}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spinr{to{transform:rotate(-360deg)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes twinkle{from{opacity:.45}to{opacity:1}}
+@keyframes fogmove{from{transform:translateX(-4%)}to{transform:translateX(4%)}}
+@keyframes pulse{50%{box-shadow:0 0 0 9px rgba(244,114,182,0),0 0 14px var(--pink)}}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.4) rotate(8deg)}100%{transform:scale(1)}}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes blink{50%{opacity:0}}
+@keyframes scan{to{top:130%}}
+@keyframes glow{50%{text-shadow:0 0 50px rgba(251,191,36,1),4px 4px 0 var(--edge)}}
+@keyframes rise-up{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-105vh) translateX(var(--dx)) scale(.3);opacity:0}}
+
+@media(max-width:900px){.hero{grid-template-columns:1fr}.question-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){
+  .wrap{width:calc(100% - 22px)}
+  .brand-title{font-size:16px}.brand-sub{display:none}.team-chip{display:none}
+  .question-grid{grid-template-columns:1fr}
+  .mission-bar,.bottom-story{flex-direction:column;align-items:flex-start}
+  .progress-wrap{width:100%}.progress-count,.stars{text-align:left;justify-content:flex-start}
+  .footer{flex-direction:column}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<!-- background decorations -->
+<div class="bg-clock" aria-hidden="true">
+  <svg viewBox="0 0 800 800" fill="none" stroke="#a78bfa" stroke-width="2">
+    <circle cx="400" cy="400" r="380"/><circle cx="400" cy="400" r="340" stroke-dasharray="3 12"/><circle cx="400" cy="400" r="250"/><circle cx="400" cy="400" r="160" stroke-dasharray="14 10"/>
+    <g stroke-width="4"><path d="M400 20v50M400 730v50M20 400h50M730 400h50M131 131l35 35M634 634l35 35M669 131l-35 35M166 634l-35 35"/></g>
+    <g fill="#a78bfa" stroke="none" font-family="Cinzel,serif" font-size="46" text-anchor="middle"><text x="400" y="125">XII</text><text x="690" y="416">III</text><text x="400" y="700">VI</text><text x="110" y="416">IX</text></g>
+  </svg>
+</div>
+<div class="fog" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="wrap nav">
+    <div class="brand"><div class="sigil"><span>⌛</span></div><div><div class="brand-title">Chrono Explorers</div><div class="brand-sub">TEMPORAL RESEARCH DIVISION</div></div></div>
+    <div class="nav-right">
+      <div id="clockChip" class="chip clock-chip hidden">⏱ T+<strong id="elapsed">00:00</strong></div>
+      <div id="teamChip" class="chip team-chip hidden">🧭 TEAM <strong id="navTeam">—</strong></div>
+      <div class="chip score-chip" id="scoreChip">✦ POINTS <strong id="score">0</strong></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <div class="eyebrow"><span class="status-dot"></span>Temporal anomaly detected · Round 01</div>
+      <h1>The Hidden<br><em>Artifact</em></h1>
+      <p class="intro">The Chrono-Core has <b>shattered</b>. Four Time Fragments are scattered through history, and the portal has dropped your team into an ancient civilization. Something is whispering from inside the relics: <b>encrypted transmissions</b>, hidden in plain sight. Decode them, recover the first fragment, and get out before the timeline collapses. ⏳</p>
+    </div>
+
+    <div class="scene" aria-label="A glowing time portal with spinning clock rings opening onto an ancient desert">
+      <svg viewBox="0 0 600 420" xmlns="http://www.w3.org/2000/svg" role="img">
+        <defs>
+          <radialGradient id="bgv" cx=".5" cy=".5" r=".75"><stop offset="0" stop-color="#2b1a6b"/><stop offset="1" stop-color="#090620"/></radialGradient>
+          <linearGradient id="inner" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b2a9a"/><stop offset=".55" stop-color="#e0568f"/><stop offset="1" stop-color="#ffb35c"/></linearGradient>
+          <radialGradient id="halo"><stop offset=".55" stop-color="#8b5cf6" stop-opacity=".7"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></radialGradient>
+          <clipPath id="pc"><circle cx="300" cy="210" r="96"/></clipPath>
+        </defs>
+        <rect width="600" height="420" fill="url(#bgv)"/>
+        <g fill="#fff">
+          <circle class="tw" cx="40" cy="50" r="2"/><circle class="tw b" cx="110" cy="130" r="1.5"/><circle class="tw" cx="520" cy="60" r="2.2"/>
+          <circle class="tw b" cx="560" cy="170" r="1.5"/><circle class="tw" cx="70" cy="300" r="1.8"/><circle class="tw b" cx="540" cy="330" r="2"/>
+          <circle class="tw" cx="200" cy="40" r="1.4"/><circle class="tw b" cx="420" cy="30" r="1.6"/>
+        </g>
+        <circle cx="300" cy="210" r="200" fill="url(#halo)"/>
+        <!-- spinning rings -->
+        <g class="sp s1"><circle cx="300" cy="210" r="168" fill="none" stroke="#22d3ee" stroke-width="3" stroke-dasharray="4 10"/></g>
+        <g class="sp s2"><circle cx="300" cy="210" r="146" fill="none" stroke="#fbbf24" stroke-width="5" stroke-dasharray="30 14 6 14"/></g>
+        <g class="sp s3"><circle cx="300" cy="210" r="124" fill="none" stroke="#f472b6" stroke-width="3" stroke-dasharray="2 8"/></g>
+        <circle cx="300" cy="210" r="106" fill="#05030f" stroke="#8b5cf6" stroke-width="5"/>
+        <!-- window to another era -->
+        <g clip-path="url(#pc)">
+          <rect x="190" y="110" width="220" height="220" fill="url(#inner)"/>
+          <circle cx="330" cy="170" r="22" fill="#ffd23f"/>
+          <path d="M190 262q60-26 120-6t100-12v90H190z" fill="#7a2d6f"/>
+          <path d="M226 270l46-70 46 70z" fill="#2a1260"/><path d="M290 272l30-44 30 44z" fill="#1e0d4d"/>
+          <path d="M190 290q80-22 160-4t60-6v60H190z" fill="#3a1558"/>
+        </g>
+        <!-- clock hands -->
+        <g class="sp hand-h"><path d="M300 210V150" stroke="#fff" stroke-width="5" stroke-linecap="round"/></g>
+        <g class="sp hand-m"><path d="M300 210V122" stroke="#22d3ee" stroke-width="3.5" stroke-linecap="round"/></g>
+        <circle cx="300" cy="210" r="7" fill="#fbbf24" stroke="#05030f" stroke-width="3"/>
+        <g fill="#fbbf24" font-family="Cinzel,serif" font-weight="800" font-size="15" text-anchor="middle">
+          <text x="300" y="52">XII</text><text x="458" y="216">III</text><text x="300" y="380">VI</text><text x="142" y="216">IX</text>
+        </g>
+        <!-- floating bits -->
+        <g class="float"><path d="M62 262l18-34 18 34-18 26z" fill="#22d3ee" stroke="#05030f" stroke-width="4" stroke-linejoin="round"/><path d="M80 228l18 34-18 26z" fill="#0ea5c7" stroke="#05030f" stroke-width="4" stroke-linejoin="round"/></g>
+        <g class="float d2"><path d="M502 112l14-26 14 26-14 20z" fill="#f472b6" stroke="#05030f" stroke-width="4" stroke-linejoin="round"/><path d="M516 86l14 26-14 20z" fill="#c43e86" stroke="#05030f" stroke-width="4" stroke-linejoin="round"/></g>
+        <g font-size="30" text-anchor="middle"><text class="float d3" x="84" y="130">𓂀</text><text class="float" x="528" y="260">⏳</text><text class="float d2" x="470" y="360">🏺</text></g>
+        <!-- ground -->
+        <path d="M0 392q150-34 300-8t300-12v48H0z" fill="#0a0724" stroke="#05030f" stroke-width="4"/>
+        <ellipse cx="300" cy="402" rx="260" ry="14" fill="#8b5cf6" opacity=".25"/>
+      </svg>
+      <span class="tag"><i>●</i> Era: Ancient · Signal unstable</span>
+    </div>
+  </section>
+
+  <section id="loginView" class="panel login-panel">
+    <div class="section-head"><div class="eyebrow">Portal authentication</div><h2>State your expedition 🌀</h2></div>
+    <p class="fineprint">Enter your Team ID and Team Name exactly as the organizers gave them. The portal binds your artifacts to your team, so refreshing the page won't change your mission.</p>
+    <form id="loginForm">
+      <div class="field"><label for="teamId">Unique Team ID</label><input id="teamId" name="teamId" placeholder="e.g. CE001" autocomplete="username" required maxlength="40"></div>
+      <div class="field"><label for="teamName">Team Name</label><input id="teamName" name="teamName" placeholder="Enter your registered team name" required maxlength="80"></div>
+      <button id="loginBtn" class="btn btn-primary btn-block" type="submit">🌀 OPEN THE PORTAL</button>
+      <div id="loginError" class="error" role="alert"></div>
+    </form>
+    <p class="fineprint" style="margin-top:18px">Don't close the portal until you're done. Your answers and progress are written to the event database.</p>
+  </section>
+
+  <section id="missionView" class="hidden">
+    <div class="mission-bar">
+      <div><div class="eyebrow">Mission briefing · link established</div><h2>Decode the whispers 🔍</h2><p>Three artifacts have been bound to your team. Download each image, scan it with the decode tool, then submit the message hidden inside.</p></div>
+      <div class="progress-wrap">
+        <div class="progress-count"><span id="solvedCount">0</span> / 3 signals decrypted</div>
+        <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+        <div class="stars" id="stars"><span>✦</span><span>✦</span><span>✦</span></div>
+      </div>
+    </div>
+    <div id="questionGrid" class="question-grid"></div>
+    <div id="completionPanel" class="completion hidden">
+      <div class="eyebrow">Mission control · confirmed</div><h2>TIME FRAGMENT #1</h2><div class="fragment">RECOVERED</div><h2>The era is stabilized</h2><p>The first fragment hums in your hands. But the fracture runs deeper...<br><span class="eyebrow">Charging the next temporal jump ⏳</span></p>
+    </div>
+    <div class="bottom-story"><div><div class="eyebrow">Explorer's code</div><h3>Preserve the timeline 🛡️</h3><p>Mission Control verifies every answer. A correct answer earns that artifact's points; a wrong one earns zero. Never share a transmission with another team.</p></div><button id="logoutBtn" class="btn btn-secondary" type="button">CLOSE PORTAL</button></div>
+  </section>
+</main>
+
+<footer class="wrap footer"><span>CHRONO EXPLORERS · FIELD INTERFACE V1.2</span><span>CLASSIFIED TEMPORAL DATA · ROUND 01</span></footer>
+<div id="toast" class="toast hidden" role="status"></div>
+
+<script>
+/*
+ * CHRONO EXPLORERS — participant frontend API integration
+ * Set API_BASE_URL to the deployed Express backend URL (no trailing slash).
+ * Expected existing routes: POST /registerTeam, /submitAnswer, /logoutTeam.
+ */
+const API_BASE_URL = "https://chrono-explorers-round1-backend.onrender.com";
+
+/* Correct decoding tools (per the Round 1 answer key): Photopea for Q2-Q5 & Q7, StegOnline for the rest */
+const PHOTOPEA="https://www.photopea.com/", STEGONLINE="https://georgeom.net/StegOnline/upload";
+const ARTIFACT_META = {
+  Q01:{title:"Dancing Girl of Mohenjo-daro",description:"A bronze relic from the Indus Valley carries a hidden signal.",decodingUrl:STEGONLINE},
+  Q02:{title:"The Sealed Doorway",description:"An ancient threshold conceals a message beyond its visible surface.",decodingUrl:PHOTOPEA},
+  Q03:{title:"The Night Sky of Giza",description:"Read the signal hidden in an ancient celestial record.",decodingUrl:PHOTOPEA},
+  Q04:{title:"The Narrow Pillar",description:"Inspect the artifact closely; the clue may be hidden in its structure.",decodingUrl:PHOTOPEA},
+  Q05:{title:"The Papyrus of One Pigment",description:"A single-pigment manuscript carries more than meets the eye.",decodingUrl:PHOTOPEA},
+  Q06:{title:"Pashupati Seal",description:"Decode the marks left by an ancient civilization.",decodingUrl:STEGONLINE},
+  Q07:{title:"The Sun Disc of Ra",description:"A solar symbol may reveal a concealed transmission.",decodingUrl:PHOTOPEA},
+  Q08:{title:"The Clay Tablet of Nippur",description:"An ancient tablet contains a message waiting to be extracted.",decodingUrl:STEGONLINE},
+  Q09:{title:"The Fields of Aaru",description:"Follow the clues encoded within this artifact.",decodingUrl:STEGONLINE},
+  Q10:{title:"Brihadisvara Temple Capstone",description:"Examine the architectural relic for its hidden signal.",decodingUrl:STEGONLINE},
+  Q11:{title:"Nataraja's Ring of Cosmic Fire",description:"A cosmic dance surrounds a message hidden in plain sight.",decodingUrl:STEGONLINE},
+  Q12:{title:"Mahabalipuram Carvings",description:"Ancient stonework conceals a transmission from the past.",decodingUrl:STEGONLINE},
+  Q13:{title:"Modhera Sun Temple Stepwell",description:"Trace the geometry and uncover the message.",decodingUrl:STEGONLINE},
+  Q14:{title:"Hampi Stone Chariot",description:"Inspect the historic chariot for an encoded clue.",decodingUrl:STEGONLINE},
+  Q15:{title:"Chrono-Core Relic Casket",description:"The final relic holds a crucial signal for the Chrono-Core.",decodingUrl:STEGONLINE}
+};
+/* Exact picture file for every artifact (files live in the Pictures/ folder next to this page) */
+const IMAGE_FILES = {Q01:"R1_Q01.jpg",Q02:"R1_Q02.png",Q03:"R1_Q03.png",Q04:"R1_Q04.png",Q05:"R1_Q05.png",Q06:"R1_Q06.png",Q07:"R1_Q07.png",Q08:"R1_Q08.png",Q09:"R1_Q09.png",Q10:"R1_Q10.png",Q11:"R1_Q11.png",Q12:"R1_Q12.png",Q13:"R1_Q13.png",Q14:"R1_Q14.png",Q15:"R1_Q15.png"};
+/* Answers are stored only as salted hashes (never in plain text). Mission Control (backend) stays the final judge. */
+const ANSWER_HASH = {Q01:"1hovsirceot",Q02:"1fko34h3nvy",Q03:"23z2wv0kdof",Q04:"324a6eyhkj",Q05:"26g9rgiajfw",Q06:"dadt4ufwa8",Q07:"xj9otn9xqh",Q08:"1bp9jsv79fu",Q09:"1rbfkics5qm",Q10:"1eg29urm26i",Q11:"qu5ivbxzyg",Q12:"1r5xa2m8ds3",Q13:"xw1fy1fdou",Q14:"8wxjlbz7xo",Q15:"22sx0c872ai"};
+const ALL_IDS = Object.keys(ARTIFACT_META), PER_TEAM = 3;
+function hashStr(s){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
+const normAnswer=v=>String(v??"").trim().toUpperCase().replace(/[\s-]+/g,"_");
+const isCorrectLocal=(id,a)=>ANSWER_HASH[id]===hashStr("CHRONO|"+id+"|"+normAnswer(a));
+/* random-but-stable pick of 3 different artifacts for a team (same team = same three, on any device) */
+function pickThree(teamId){
+  let seed=parseInt(hashStr("R1|"+String(teamId).trim().toLowerCase()).slice(0,6),36)||1;
+  const rnd=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+  const pool=[...ALL_IDS];for(let i=pool.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+  return pool.slice(0,PER_TEAM);
+}
+const ARTIFACT_ICON = {Q01:"💃",Q02:"🚪",Q03:"🌌",Q04:"🗿",Q05:"📜",Q06:"🐂",Q07:"☀️",Q08:"🧱",Q09:"🌾",Q10:"🛕",Q11:"🔥",Q12:"🪨",Q13:"💧",Q14:"🛞",Q15:"📦"};
+const ACCENTS = ["#22d3ee","#f472b6","#fbbf24","#a78bfa","#34d399","#fb923c"];
+const SPARK_COLORS = ["#22d3ee","#f472b6","#fbbf24","#a78bfa","#34d399"];
+
+const $ = (id) => document.getElementById(id);
+let currentTeam = null, assigned = [], solved = new Set(), attempted = new Set(), busy = false, currentPoints = 0, clockTimer = null, teamState = null;
+const configured = () => API_BASE_URL.startsWith("http") && !API_BASE_URL.includes("YOUR-BACKEND-URL");
+
+function showToast(message){const t=$("toast");t.textContent=message;t.classList.remove("hidden");clearTimeout(showToast._t);showToast._t=setTimeout(()=>t.classList.add("hidden"),3500)}
+function setBusy(button,state,label){button.disabled=state;if(state){button.dataset.oldLabel=button.textContent;button.textContent=label||"CONTACTING MISSION CONTROL…"}else{button.textContent=button.dataset.oldLabel||label||"SUBMIT";delete button.dataset.oldLabel}}
+function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+/* glowing sparks rise from the bottom of the screen */
+function sparks(n=60){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  for(let i=0;i<n;i++){
+    const s=document.createElement("div");s.className="spark";
+    const size=4+Math.random()*9,color=SPARK_COLORS[i%SPARK_COLORS.length];
+    s.style.cssText=`left:${Math.random()*100}vw;width:${size}px;height:${size}px;background:${color};box-shadow:0 0 ${size*2}px ${color};--dx:${(Math.random()*160-80)}px;animation-duration:${2+Math.random()*2.2}s;animation-delay:${Math.random()*.5}s`;
+    document.body.appendChild(s);setTimeout(()=>s.remove(),5000);
+  }
+}
+
+/* per-team saved progress (survives refresh / closing the tab / logout) */
+const stKey=id=>"chronoState:"+String(id).trim().toLowerCase();
+function loadState(id){try{return JSON.parse(localStorage.getItem(stKey(id))||"null")||{}}catch{return {}}}
+function saveState(){if(!currentTeam)return;teamState.solved=[...solved];teamState.attempted=[...attempted];teamState.points=currentPoints;teamState.assigned=assigned.map(q=>q.questionId);try{localStorage.setItem(stKey(currentTeam.teamId),JSON.stringify(teamState))}catch{}}
+
+/* mission clock: starts once per team at first login, keeps running across refreshes/logouts, freezes when all 3 artifacts are answered */
+const fmt=ms=>{const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=String(Math.floor(s%3600/60)).padStart(2,"0"),sec=String(s%60).padStart(2,"0");return (h?h+":":"")+m+":"+sec};
+const elapsedSeconds=()=>teamState&&teamState.startedAt?Math.max(0,Math.floor(((teamState.finishedAt||Date.now())-teamState.startedAt)/1000)):0;
+function startClock(){
+  $("clockChip").classList.remove("hidden");clearInterval(clockTimer);
+  const tick=()=>{$("elapsed").textContent=fmt((teamState.finishedAt||Date.now())-teamState.startedAt)};
+  tick();if(!teamState.finishedAt)clockTimer=setInterval(tick,1000);
+}
+function stopClock(){clearInterval(clockTimer);$("clockChip").classList.add("hidden")}
+function checkFinished(){
+  if(!assigned.length||teamState.finishedAt)return;
+  if(assigned.every(q=>attempted.has(q.questionId)||solved.has(q.questionId))){teamState.finishedAt=Date.now();clearInterval(clockTimer);$("elapsed").textContent=fmt(teamState.finishedAt-teamState.startedAt);saveState()}
+}
+
+async function apiPost(route,payload){
+  if(!configured()) throw new Error("Set API_BASE_URL in index.html to the deployed Express backend URL first.");
+  let response;
+  try{response=await fetch(`${API_BASE_URL.replace(/\/+$/,"")}/${route}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})}
+  catch(e){throw new Error("Could not reach Mission Control. Check the backend URL, server status, and CORS settings.")}
+  const data=await response.json().catch(()=>({message:"The backend returned an invalid response."}));
+  if(!response.ok||data.success===false)throw new Error(data.message||`Backend request failed (${response.status}).`);
+  return data;
+}
+function normalizeQuestion(q){
+  const id=String(q.questionId||q.question_id||q.id||"").toUpperCase();
+  const meta=ARTIFACT_META[id]||{};
+  const filename=IMAGE_FILES[id]||q.imageFilename||q.image_filename||q.image||`${id}.png`;
+  return {...meta,...q,questionId:id,imageFilename:filename,title:q.title||q.artifactName||meta.title||`Artifact ${id}`,description:q.description||q.hint||meta.description||"Inspect the artifact to uncover its hidden transmission.",decodingUrl:meta.decodingUrl||q.decodingUrl||q.decoding_url||"",points:Number(q.points??q.pointsAvailable??5)};
+}
+function saveSession(){sessionStorage.setItem("chronoTeam",JSON.stringify({teamId:currentTeam.teamId,teamName:currentTeam.teamName}))}
+function setScore(v,animate){currentPoints=v;$("score").textContent=v;if(animate){const c=$("scoreChip");c.classList.remove("bump");void c.offsetWidth;c.classList.add("bump")}}
+function showMission(team,data){
+  currentTeam={teamId:String(team.teamId||team.team_id),teamName:team.teamName||team.team_name};
+  saveSession();$("navTeam").textContent=currentTeam.teamId;$("teamChip").classList.remove("hidden");
+  $("loginView").classList.add("hidden");$("missionView").classList.remove("hidden");
+  teamState=loadState(currentTeam.teamId);
+  /* exactly 3 artifacts per team: backend assignment if valid, else the one saved earlier, else a random-but-stable pick */
+  const seen=new Set(),fromApi=(data.assignedQuestions||data.assigned_questions||data.questions||[]).map(normalizeQuestion).filter(q=>ARTIFACT_META[q.questionId]&&!seen.has(q.questionId)&&seen.add(q.questionId));
+  if(fromApi.length===PER_TEAM)assigned=fromApi;
+  else{const ids=(Array.isArray(teamState.assigned)&&teamState.assigned.length===PER_TEAM&&teamState.assigned.every(i=>ARTIFACT_META[i]))?teamState.assigned:pickThree(currentTeam.teamId);assigned=ids.map(id=>normalizeQuestion({questionId:id}))}
+  solved=new Set([...(data.solvedQuestionIds||data.solved_question_ids||[]),...(teamState.solved||[])].map(x=>String(x).toUpperCase()).filter(i=>assigned.some(q=>q.questionId===i)));
+  attempted=new Set([...(data.attemptedQuestionIds||data.attempted_question_ids||data.answeredQuestionIds||[]),...(teamState.attempted||[]),...solved].map(x=>String(x).toUpperCase()).filter(i=>assigned.some(q=>q.questionId===i)));
+  const apiPts=Number(data.totalPoints??data.total_points??0)||0;
+  setScore(Math.max(apiPts,Number(teamState.points)||0));
+  /* clock start: earliest of backend registration time and the saved local start */
+  const srv=Date.parse(data.startedAt||data.startTime||data.start_time||data.registeredAt||data.registered_at||data.createdAt||data.created_at||"");
+  const local=Number(teamState.startedAt)||0;
+  teamState.startedAt=[srv,local].filter(n=>n>0).reduce((a,b)=>Math.min(a,b),Infinity);
+  if(!isFinite(teamState.startedAt))teamState.startedAt=Date.now();
+  saveState();startClock();checkFinished();renderQuestions();updateProgress();
+}
+function renderQuestions(){
+  const grid=$("questionGrid");grid.innerHTML="";
+  if(!assigned.length){grid.innerHTML='<div class="panel"><div class="eyebrow">No assignment found</div><p>Mission Control did not return assigned artifacts. Contact an organizer.</p></div>';return}
+  assigned.forEach((q,index)=>{
+    const id=q.questionId,done=solved.has(id),rec=!done&&attempted.has(id);
+    const icon=ARTIFACT_ICON[id]||"🏺";
+    const imagePath=`Pictures/${q.imageFilename}`;
+    const card=document.createElement("article");card.className="question-card"+(done?" locked":"");
+    card.style.setProperty("--accent",ACCENTS[index%ACCENTS.length]);card.style.animationDelay=(index*.12)+"s";
+    card.innerHTML=`
+      <div class="card-top"><span class="card-number">ARTIFACT #${index+1}</span><span class="card-state" id="state-${id}">${done?"✓ Decrypted":"Encrypted"}</span></div>
+      <div class="image-stage"><span class="corner-emoji">${icon}</span><img src="${escapeHtml(imagePath)}" alt="${escapeHtml(q.title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.classList.remove('hidden')"><span class="image-placeholder hidden">${icon}</span><span class="corner-rune">SIGNAL ${String(index+1).padStart(2,"0")} ◈</span></div>
+      <div class="card-body"><h3 class="artifact-title">${escapeHtml(q.title)}</h3><p class="artifact-description">${escapeHtml(q.description)}</p>
+        <div class="card-actions"><a class="btn btn-secondary" href="${escapeHtml(imagePath)}" download="${escapeHtml(q.imageFilename)}">⬇️ Download</a><a class="btn btn-secondary" href="${escapeHtml(q.decodingUrl||'#')}" ${q.decodingUrl?'target="_blank" rel="noopener noreferrer"':'aria-disabled="true"'}>🔍 Decode tool</a></div>
+        <form class="answer-form" data-id="${escapeHtml(id)}"><label class="field" style="margin:0"><span class="eyebrow">Hidden message · ${q.points} pts</span><input name="answer" placeholder="${done?'Transmission secured':rec?'Signal recorded':'Enter the decoded answer'}" autocomplete="off" required ${done||rec?'disabled':''} aria-label="Answer for ${escapeHtml(q.title)}"></label><button class="btn ${done||rec?'btn-secondary':'btn-primary'}" type="submit" ${done||rec?'disabled':''}>${done?'✅ SECURED':rec?'SIGNAL RECORDED':'SUBMIT ANSWER →'}</button><div class="feedback ${done?'good':rec?'bad':''}" id="feedback-${id}" role="status">${done?'Transmission verified. Points secured.':rec?'Signal unverified · 0 points.':''}</div></form>
+      </div>`;
+    grid.appendChild(card);card.querySelector("form").addEventListener("submit",e=>handleAnswer(e,id,card.querySelector("form")));
+  });
+}
+function updateProgress(){
+  const count=assigned.filter(q=>solved.has(q.questionId)).length;
+  $("solvedCount").textContent=count;$("progressFill").style.width=`${assigned.length?count/assigned.length*100:0}%`;
+  [...$("stars").children].forEach((s,i)=>s.classList.toggle("on",i<count));
+  if(assigned.length&&count===assigned.length){
+    if($("completionPanel").classList.contains("hidden"))sparks(110);
+    $("completionPanel").classList.remove("hidden");
+  } else $("completionPanel").classList.add("hidden");
+}
+function lockWrong(id,form,msg){
+  const input=form.elements.answer,button=form.querySelector("button"),feedback=$(`feedback-${id}`);
+  attempted.add(id);input.disabled=true;button.disabled=true;button.textContent="SIGNAL RECORDED";
+  feedback.textContent=msg;feedback.className="feedback bad";
+}
+async function handleAnswer(event,questionId,form){
+  event.preventDefault();if(busy||solved.has(questionId)||attempted.has(questionId))return;
+  const input=form.elements.answer,button=form.querySelector("button"),feedback=$(`feedback-${questionId}`);
+  const answer=normAnswer(input.value);if(!answer){feedback.textContent="Enter a decoded transmission first.";feedback.className="feedback bad";return}
+  const localOk=isCorrectLocal(questionId,answer);
+  const q=assigned.find(x=>x.questionId===questionId);
+  busy=true;setBusy(button,true,"VERIFYING SIGNAL…");feedback.textContent="Sending transmission through the portal…";feedback.className="feedback";
+  try{
+    const secs=elapsedSeconds();
+    const result=await apiPost("submitAnswer",{teamId:currentTeam.teamId,questionId,answer,timeTakenSeconds:secs,elapsedSeconds:secs,submittedAt:new Date().toISOString()});
+    const serverOk=Boolean(result.isCorrect??result.is_correct??result.correct);
+    if(localOk&&serverOk){
+      /* only an answer that matches the key AND is confirmed by the database backend earns points */
+      const awarded=Number(result.pointsAwarded??result.points_awarded??(q?q.points:5))||0;
+      solved.add(questionId);attempted.add(questionId);
+      const total=Number(result.totalPoints??result.total_points);
+      setScore(Number.isFinite(total)?Math.max(total,currentPoints):currentPoints+awarded,true);
+      input.disabled=true;button.disabled=true;button.textContent="✅ SECURED";
+      $(`state-${questionId}`).textContent="✓ Decrypted";
+      feedback.textContent=result.message||`✦ Transmission decoded · +${awarded} points`;feedback.className="feedback good";
+      form.closest(".question-card").classList.add("locked");sparks(40);showToast("✦ Signal verified. Points added to your mission record.");
+    }else if(localOk&&!serverOk){
+      lockWrong(questionId,form,"Mission Control could not confirm this answer · 0 points. Tell an organizer.");
+    }else{
+      lockWrong(questionId,form,(!serverOk&&result.message)||"Signal unverified · 0 points. Study the artifact more closely.");
+    }
+    checkFinished();saveState();updateProgress();
+  }catch(error){
+    const msg=error.message||"";
+    if(/already/i.test(msg)){lockWrong(questionId,form,msg);checkFinished();saveState();updateProgress()}
+    else{feedback.textContent=msg||"Mission Control could not verify the answer. Check your connection and retry.";feedback.className="feedback bad"}
+  }finally{busy=false;if(!solved.has(questionId)&&!attempted.has(questionId))setBusy(button,false,"SUBMIT ANSWER →")}
+}
+$("loginForm").addEventListener("submit",async event=>{
+  event.preventDefault();const teamId=$("teamId").value.trim(),teamName=$("teamName").value.trim(),btn=$("loginBtn");
+  $("loginError").textContent="";
+  if(!teamId||!teamName){$("loginError").textContent="Enter both your Team ID and Team Name.";return}
+  if(!configured()){$("loginError").textContent="Backend URL is not configured yet. Set API_BASE_URL in index.html.";return}
+  setBusy(btn,true,"OPENING PORTAL…");
+  try{
+    const result=await apiPost("registerTeam",{teamId,teamName});
+    if(result.isAdmin)throw new Error("Admin credentials cannot be used on the participant page.");
+    showMission({teamId:result.teamId||teamId,teamName:result.teamName||teamName},result);
+    showToast("🌀 Temporal link established. Your artifacts are bound to your team.");
+  }catch(error){$("loginError").textContent=error.message||"Could not register team. Check the Team ID and name."}
+  finally{setBusy(btn,false,"🌀 OPEN THE PORTAL")}
+});
+$("logoutBtn").addEventListener("click",async()=>{
+  if(!currentTeam)return;
+  if(!confirm("Close the portal? Your assignment and recorded answers will remain in the event database."))return;
+  try{await apiPost("logoutTeam",{teamId:currentTeam.teamId})}catch(e){showToast("Session ended locally, but the backend logout could not be recorded: "+e.message)}
+  saveState();sessionStorage.removeItem("chronoTeam");stopClock();currentTeam=null;teamState=null;assigned=[];solved.clear();attempted.clear();setScore(0);
+  $("missionView").classList.add("hidden");$("loginView").classList.remove("hidden");$("teamChip").classList.add("hidden");$("questionGrid").innerHTML="";$("completionPanel").classList.add("hidden");
+});
+async function restoreSession(){
+  let stored;try{stored=JSON.parse(sessionStorage.getItem("chronoTeam")||"null")}catch{return}
+  if(!stored)return;
+  $("teamId").value=stored.teamId;$("teamName").value=stored.teamName;
+  if(!configured())return;
+  try{
+    const data=await apiPost("registerTeam",{teamId:stored.teamId,teamName:stored.teamName});
+    showMission(stored,data);
+  }catch(error){console.warn("Could not restore saved team session:",error)}
+}
+restoreSession();
+</script>
+</body>
+</html>

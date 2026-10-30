@@ -24,6 +24,7 @@ const FieldValue = admin.firestore.FieldValue;
 
 const PORT = process.env.PORT || 3000;
 const ROUND_ID = "round1";
+const CLUE_PENALTY = 2; //change 1 in final edit
 
 // --------------------------------------------------
 // QUESTIONS
@@ -246,7 +247,8 @@ app.post(
             teamId: teamData.teamId,
             teamName: teamData.teamName,
             assignedQuestions:
-              teamData.assignedQuestions || []
+              teamData.assignedQuestions || [],
+            cluesUsed: teamData.cluesUsed || [] //change 4 in final edit
           };
         }
 
@@ -295,11 +297,19 @@ app.post(
     const publicQuestions =
       result.assignedQuestions.map(publicQuestion);
 
+    //change 4 in final edit (start)
+    const subs = (await db.collection("submissions")
+      .where("teamId", "==", result.teamId).get()).docs.map(d => d.data());
+    //change 4 in final edit (end)
+
     return res.json({
       success: true,
       teamId: result.teamId,
       teamName: result.teamName,
-      assignedQuestions: publicQuestions
+      assignedQuestions: publicQuestions,
+      cluesUsedQuestionIds: result.cluesUsed || [], //change 4 in final edit
+      solvedQuestionIds: subs.filter(s => s.isCorrect).map(s => s.questionId), //change 4 in final edit
+      attemptedQuestionIds: subs.map(s => s.questionId) //change 4 in final edit
     });
   })
 );
@@ -349,6 +359,36 @@ app.post(
 );
 
 // --------------------------------------------------
+// REVEAL CLUE  //change 2 in final edit
+// --------------------------------------------------
+
+//change 2 in final edit (start of new route)
+app.post("/revealClue", asyncRoute(async (req, res) => {
+  const { teamId, questionId } = req.body || {};
+  if (typeof teamId !== "string" || typeof questionId !== "string" ||
+      !teamId.trim() || !questionId.trim()) {
+    throw new HttpError(400, "Team ID and Question ID are required.");
+  }
+  const cleanTeamId = teamId.trim();
+  const cleanQuestionId = questionId.trim();
+  const teamRef = db.collection("teams").doc(cleanTeamId);
+  const submissionRef = db.collection("submissions").doc(`${cleanTeamId}_${cleanQuestionId}`);
+
+  await db.runTransaction(async (t) => {
+    const team = await t.get(teamRef);
+    if (!team.exists) throw new HttpError(404, "Team does not exist.");
+    const assigned = (team.data().assignedQuestions || []).some(q => q.id === cleanQuestionId);
+    if (!assigned) throw new HttpError(403, "This question was not assigned to your team.");
+    const sub = await t.get(submissionRef);
+    if (sub.exists) throw new HttpError(409, "You have already submitted this question.");
+    t.update(teamRef, { cluesUsed: FieldValue.arrayUnion(cleanQuestionId) });
+  });
+
+  return res.json({ success: true });
+}));
+//change 2 in final edit (end of new route)
+
+// --------------------------------------------------
 // SUBMIT ANSWER
 // --------------------------------------------------
 
@@ -358,7 +398,8 @@ app.post(
     const {
       teamId,
       questionId,
-      answer
+      answer,
+      clueUsed //change 3 in final edit
     } = req.body || {};
 
     // Validate input
@@ -396,9 +437,7 @@ app.post(
       normalizeAnswer(answer) ===
       normalizeAnswer(question.answer);
 
-    const pointsAwarded = isCorrect
-      ? question.points
-      : 0;
+    //change 3 in final edit: outer pointsAwarded removed (now calculated inside the transaction)
 
     const teamRef = db
       .collection("teams")
@@ -424,6 +463,15 @@ app.post(
         }
 
         const teamData = teamSnapshot.data();
+
+        //change 3 in final edit (start)
+        const usedClue =
+          (teamData.cluesUsed || []).includes(cleanQuestionId) || clueUsed === true;
+        const maxPoints = usedClue
+          ? Math.max(0, question.points - CLUE_PENALTY)
+          : question.points;
+        const pointsAwarded = isCorrect ? maxPoints : 0;
+        //change 3 in final edit (end)
 
         // Check assigned question
         const assignedQuestion =
@@ -458,6 +506,8 @@ app.post(
           submittedAnswer: answer.trim(),
           isCorrect,
           pointsAwarded,
+          clueUsed: usedClue, //change 3 in final edit
+          maxPoints, //change 3 in final edit
           submittedAt: FieldValue.serverTimestamp()
         });
 
@@ -469,7 +519,8 @@ app.post(
 
         return {
           isCorrect,
-          pointsAwarded
+          pointsAwarded,
+          clueUsed: usedClue //change 3 in final edit
         };
       }
     );

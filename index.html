@@ -321,6 +321,25 @@ const ARTIFACT_META = {
 const IMAGE_FILES = {Q01:"R1_Q01.jpg",Q02:"R1_Q02.png",Q03:"R1_Q03.png",Q04:"R1_Q04.png",Q05:"R1_Q05.png",Q06:"R1_Q06.png",Q07:"R1_Q07.png",Q08:"R1_Q08.png",Q09:"R1_Q09.png",Q10:"R1_Q10.png",Q11:"R1_Q11.png",Q12:"R1_Q12.png",Q13:"R1_Q13.png",Q14:"R1_Q14.png",Q15:"R1_Q15.png"};
 /* Answers are stored only as salted hashes (never in plain text). Mission Control (backend) stays the final judge. */
 const ANSWER_HASH = {Q01:"1hovsirceot",Q02:"1fko34h3nvy",Q03:"23z2wv0kdof",Q04:"324a6eyhkj",Q05:"26g9rgiajfw",Q06:"dadt4ufwa8",Q07:"xj9otn9xqh",Q08:"1bp9jsv79fu",Q09:"1rbfkics5qm",Q10:"1eg29urm26i",Q11:"qu5ivbxzyg",Q12:"1r5xa2m8ds3",Q13:"xw1fy1fdou",Q14:"8wxjlbz7xo",Q15:"22sx0c872ai"};
+/* Clues from the Round 1 answer key. Revealing one caps that artifact at 3 points (-2). */
+const CLUES = {
+  Q01:"The bronze figurine has a secret transmission tag attached to its file properties.💡 **Need help with a clue? Ask us!**",
+  Q02:"What sleeps in the doorway's shadow wakes when given light.💡 **Need help with a clue? Ask us!**",
+  Q03:"Only the night's blue sees what the stars keep.💡 **Need help with a clue? Ask us!**",
+  Q04:"Written narrow to fit the pillar. Widen what is narrow.💡 **Need help with a clue? Ask us!**",
+  Q05:"One pigment, one seal. Gather every grain of it.💡 **Need help with a clue? Ask us!**",
+  Q06:"The green channel of the seal holds an ancient translated frequency.💡 **Need help with a clue? Ask us!**",
+  Q07:"The falcon's sun writes backwards in its own glare.💡 **Need help with a clue? Ask us!**",
+  Q08:"The faintest whisper of red holds the word.💡 **Need help with a clue? Ask us!**",
+  Q09:"The reeds grow deep. Do not stop at the surface.💡 **Need help with a clue? Ask us!**",
+  Q10:"The dome capstone transmission was reflected by the rift.💡 **Need help with a clue? Ask us!**",
+  Q11:"The ring of fire holds a secret frequency in the blue spectrum.💡 **Need help with a clue? Ask us!**",
+  Q12:"Ocean waves shifted every letter forward by one position (B was originally A).💡 **Need help with a clue? Ask us!**",
+  Q13:"The geometric steps hold a two-part split key.💡 **Need help with a clue? Ask us!**",
+  Q14:"The granite axles contain a secondary bit plane signal.💡 **Need help with a clue? Ask us!**",
+  Q15:"Find the SANCTUARY NAME in the file's details and the ACTIVATION PIN in Red 0. Combine as [SANCTUARY]_[PIN].💡 **Need help with a clue? Ask us!**"
+};
+const CLUE_PENALTY = 2;
 const ALL_IDS = Object.keys(ARTIFACT_META), PER_TEAM = 3;
 function hashStr(s){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
 const normAnswer=v=>String(v??"").trim().toUpperCase().replace(/[\s-]+/g,"_");
@@ -337,7 +356,7 @@ const ACCENTS = ["#22d3ee","#f472b6","#fbbf24","#a78bfa","#34d399","#fb923c"];
 const SPARK_COLORS = ["#22d3ee","#f472b6","#fbbf24","#a78bfa","#34d399"];
 
 const $ = (id) => document.getElementById(id);
-let currentTeam = null, assigned = [], solved = new Set(), attempted = new Set(), busy = false, currentPoints = 0, clockTimer = null, teamState = null;
+let currentTeam = null, assigned = [], solved = new Set(), attempted = new Set(), cluesUsed = new Set(), busy = false, currentPoints = 0, clockTimer = null, teamState = null;
 const configured = () => API_BASE_URL.startsWith("http") && !API_BASE_URL.includes("YOUR-BACKEND-URL");
 
 function showToast(message){const t=$("toast");t.textContent=message;t.classList.remove("hidden");clearTimeout(showToast._t);showToast._t=setTimeout(()=>t.classList.add("hidden"),3500)}
@@ -358,7 +377,7 @@ function sparks(n=60){
 /* per-team saved progress (survives refresh / closing the tab / logout) */
 const stKey=id=>"chronoState:"+String(id).trim().toLowerCase();
 function loadState(id){try{return JSON.parse(localStorage.getItem(stKey(id))||"null")||{}}catch{return {}}}
-function saveState(){if(!currentTeam)return;teamState.solved=[...solved];teamState.attempted=[...attempted];teamState.points=currentPoints;teamState.assigned=assigned.map(q=>q.questionId);try{localStorage.setItem(stKey(currentTeam.teamId),JSON.stringify(teamState))}catch{}}
+function saveState(){if(!currentTeam)return;teamState.solved=[...solved];teamState.attempted=[...attempted];teamState.clues=[...cluesUsed];teamState.points=currentPoints;teamState.assigned=assigned.map(q=>q.questionId);try{localStorage.setItem(stKey(currentTeam.teamId),JSON.stringify(teamState))}catch{}}
 
 /* mission clock: starts once per team at first login, keeps running across refreshes/logouts, freezes when all 3 artifacts are answered */
 const fmt=ms=>{const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=String(Math.floor(s%3600/60)).padStart(2,"0"),sec=String(s%60).padStart(2,"0");return (h?h+":":"")+m+":"+sec};
@@ -391,6 +410,9 @@ function normalizeQuestion(q){
 }
 function saveSession(){sessionStorage.setItem("chronoTeam",JSON.stringify({teamId:currentTeam.teamId,teamName:currentTeam.teamName}))}
 function setScore(v,animate){currentPoints=v;$("score").textContent=v;if(animate){const c=$("scoreChip");c.classList.remove("bump");void c.offsetWidth;c.classList.add("bump")}}
+const maxPoints=q=>cluesUsed.has(q.questionId)?Math.max(0,q.points-CLUE_PENALTY):q.points;
+/* total is always derived from solved artifacts, so it stays correct after refresh */
+const computeScore=()=>assigned.reduce((t,q)=>t+(solved.has(q.questionId)?maxPoints(q):0),0);
 function showMission(team,data){
   currentTeam={teamId:String(team.teamId||team.team_id),teamName:team.teamName||team.team_name};
   saveSession();$("navTeam").textContent=currentTeam.teamId;$("teamChip").classList.remove("hidden");
@@ -402,8 +424,8 @@ function showMission(team,data){
   else{const ids=(Array.isArray(teamState.assigned)&&teamState.assigned.length===PER_TEAM&&teamState.assigned.every(i=>ARTIFACT_META[i]))?teamState.assigned:pickThree(currentTeam.teamId);assigned=ids.map(id=>normalizeQuestion({questionId:id}))}
   solved=new Set([...(data.solvedQuestionIds||data.solved_question_ids||[]),...(teamState.solved||[])].map(x=>String(x).toUpperCase()).filter(i=>assigned.some(q=>q.questionId===i)));
   attempted=new Set([...(data.attemptedQuestionIds||data.attempted_question_ids||data.answeredQuestionIds||[]),...(teamState.attempted||[]),...solved].map(x=>String(x).toUpperCase()).filter(i=>assigned.some(q=>q.questionId===i)));
-  const apiPts=Number(data.totalPoints??data.total_points??0)||0;
-  setScore(Math.max(apiPts,Number(teamState.points)||0));
+  cluesUsed=new Set([...(data.cluesUsedQuestionIds||data.clues_used_question_ids||data.clueQuestionIds||[]),...(teamState.clues||[])].map(x=>String(x).toUpperCase()).filter(i=>assigned.some(q=>q.questionId===i)));
+  setScore(computeScore());
   /* clock start: earliest of backend registration time and the saved local start */
   const srv=Date.parse(data.startedAt||data.startTime||data.start_time||data.registeredAt||data.registered_at||data.createdAt||data.created_at||"");
   const local=Number(teamState.startedAt)||0;
@@ -425,9 +447,11 @@ function renderQuestions(){
       <div class="image-stage"><span class="corner-emoji">${icon}</span><img src="${escapeHtml(imagePath)}" alt="${escapeHtml(q.title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.classList.remove('hidden')"><span class="image-placeholder hidden">${icon}</span><span class="corner-rune">SIGNAL ${String(index+1).padStart(2,"0")} ◈</span></div>
       <div class="card-body"><h3 class="artifact-title">${escapeHtml(q.title)}</h3><p class="artifact-description">${escapeHtml(q.description)}</p>
         <div class="card-actions"><a class="btn btn-secondary" href="${escapeHtml(imagePath)}" download="${escapeHtml(q.imageFilename)}">⬇️ Download</a><a class="btn btn-secondary" href="${escapeHtml(q.decodingUrl||'#')}" ${q.decodingUrl?'target="_blank" rel="noopener noreferrer"':'aria-disabled="true"'}>🔍 Decode tool</a></div>
-        <form class="answer-form" data-id="${escapeHtml(id)}"><label class="field" style="margin:0"><span class="eyebrow">Hidden message · ${q.points} pts</span><input name="answer" placeholder="${done?'Transmission secured':rec?'Signal recorded':'Enter the decoded answer'}" autocomplete="off" required ${done||rec?'disabled':''} aria-label="Answer for ${escapeHtml(q.title)}"></label><button class="btn ${done||rec?'btn-secondary':'btn-primary'}" type="submit" ${done||rec?'disabled':''}>${done?'✅ SECURED':rec?'SIGNAL RECORDED':'SUBMIT ANSWER →'}</button><div class="feedback ${done?'good':rec?'bad':''}" id="feedback-${id}" role="status">${done?'Transmission verified. Points secured.':rec?'Signal unverified · 0 points.':''}</div></form>
+        ${(done||rec)&&!cluesUsed.has(id)?'':`<div class="card-actions" style="grid-template-columns:1fr"><button type="button" class="btn btn-secondary clue-btn" id="clue-btn-${id}" ${cluesUsed.has(id)||done||rec?'disabled':''}>${cluesUsed.has(id)?'💡 Clue revealed (max '+maxPoints(q)+' pts)':'💡 Reveal clue (−'+CLUE_PENALTY+' pts)'}</button></div><p class="artifact-description ${cluesUsed.has(id)?'':'hidden'}" id="clue-text-${id}" style="min-height:0;border-left:3px solid var(--accent);padding-left:10px">${cluesUsed.has(id)?'💡 '+escapeHtml(CLUES[id]||''):''}</p>`}
+        <form class="answer-form" data-id="${escapeHtml(id)}"><label class="field" style="margin:0"><span class="eyebrow">Hidden message · <span id="pts-${id}">${maxPoints(q)}</span> pts</span><input name="answer" placeholder="${done?'Transmission secured':rec?'Signal recorded':'Enter the decoded answer'}" autocomplete="off" required ${done||rec?'disabled':''} aria-label="Answer for ${escapeHtml(q.title)}"></label><button class="btn ${done||rec?'btn-secondary':'btn-primary'}" type="submit" ${done||rec?'disabled':''}>${done?'✅ SECURED':rec?'SIGNAL RECORDED':'SUBMIT ANSWER →'}</button><div class="feedback ${done?'good':rec?'bad':''}" id="feedback-${id}" role="status">${done?'Transmission verified. Points secured.':rec?'Signal unverified · 0 points.':''}</div></form>
       </div>`;
     grid.appendChild(card);card.querySelector("form").addEventListener("submit",e=>handleAnswer(e,id,card.querySelector("form")));
+    const cb=card.querySelector(".clue-btn");if(cb)cb.addEventListener("click",()=>revealClue(id));
   });
 }
 function updateProgress(){
@@ -439,9 +463,20 @@ function updateProgress(){
     $("completionPanel").classList.remove("hidden");
   } else $("completionPanel").classList.add("hidden");
 }
+function revealClue(id){
+  if(solved.has(id)||attempted.has(id)||cluesUsed.has(id)||!currentTeam)return;
+  const q=assigned.find(x=>x.questionId===id);if(!q)return;
+  if(!confirm(`Reveal the clue for "${q.title}"?\n\nThis artifact will then be worth a maximum of ${Math.max(0,q.points-CLUE_PENALTY)} points instead of ${q.points}. This cannot be undone.`))return;
+  cluesUsed.add(id);saveState();
+  const btn=$(`clue-btn-${id}`),txt=$(`clue-text-${id}`);
+  txt.textContent="💡 "+(CLUES[id]||"No clue available for this artifact.");txt.classList.remove("hidden");
+  btn.disabled=true;btn.textContent=`💡 Clue revealed (max ${maxPoints(q)} pts)`;$(`pts-${id}`).textContent=maxPoints(q);
+  /* best-effort: tell the backend the clue was used (the answer submission also carries clueUsed) */
+  apiPost("revealClue",{teamId:currentTeam.teamId,questionId:id,timeTakenSeconds:elapsedSeconds()}).catch(()=>{});
+}
 function lockWrong(id,form,msg){
   const input=form.elements.answer,button=form.querySelector("button"),feedback=$(`feedback-${id}`);
-  attempted.add(id);input.disabled=true;button.disabled=true;button.textContent="SIGNAL RECORDED";
+  attempted.add(id);input.disabled=true;button.disabled=true;button.textContent="SIGNAL RECORDED";const cbtn=$(`clue-btn-${id}`);if(cbtn)cbtn.disabled=true;
   feedback.textContent=msg;feedback.className="feedback bad";
 }
 async function handleAnswer(event,questionId,form){
@@ -453,17 +488,17 @@ async function handleAnswer(event,questionId,form){
   busy=true;setBusy(button,true,"VERIFYING SIGNAL…");feedback.textContent="Sending transmission through the portal…";feedback.className="feedback";
   try{
     const secs=elapsedSeconds();
-    const result=await apiPost("submitAnswer",{teamId:currentTeam.teamId,questionId,answer,timeTakenSeconds:secs,elapsedSeconds:secs,submittedAt:new Date().toISOString()});
+    const result=await apiPost("submitAnswer",{teamId:currentTeam.teamId,questionId,answer,clueUsed:cluesUsed.has(questionId),maxPoints:maxPoints(q),timeTakenSeconds:secs,elapsedSeconds:secs,submittedAt:new Date().toISOString()});
     const serverOk=Boolean(result.isCorrect??result.is_correct??result.correct);
     if(localOk&&serverOk){
       /* only an answer that matches the key AND is confirmed by the database backend earns points */
-      const awarded=Number(result.pointsAwarded??result.points_awarded??(q?q.points:5))||0;
       solved.add(questionId);attempted.add(questionId);
-      const total=Number(result.totalPoints??result.total_points);
-      setScore(Number.isFinite(total)?Math.max(total,currentPoints):currentPoints+awarded,true);
+      const awarded=maxPoints(q);   /* 5 pts, or 3 pts if the clue was revealed */
+      setScore(computeScore(),true);
+      const cbtn=$(`clue-btn-${questionId}`);if(cbtn)cbtn.disabled=true;
       input.disabled=true;button.disabled=true;button.textContent="✅ SECURED";
       $(`state-${questionId}`).textContent="✓ Decrypted";
-      feedback.textContent=result.message||`✦ Transmission decoded · +${awarded} points`;feedback.className="feedback good";
+      feedback.textContent=`✦ Transmission decoded · +${awarded} points${cluesUsed.has(questionId)?" (clue used)":""}`;feedback.className="feedback good";
       form.closest(".question-card").classList.add("locked");sparks(40);showToast("✦ Signal verified. Points added to your mission record.");
     }else if(localOk&&!serverOk){
       lockWrong(questionId,form,"Mission Control could not confirm this answer · 0 points. Tell an organizer.");
@@ -495,7 +530,7 @@ $("logoutBtn").addEventListener("click",async()=>{
   if(!currentTeam)return;
   if(!confirm("Close the portal? Your assignment and recorded answers will remain in the event database."))return;
   try{await apiPost("logoutTeam",{teamId:currentTeam.teamId})}catch(e){showToast("Session ended locally, but the backend logout could not be recorded: "+e.message)}
-  saveState();sessionStorage.removeItem("chronoTeam");stopClock();currentTeam=null;teamState=null;assigned=[];solved.clear();attempted.clear();setScore(0);
+  saveState();sessionStorage.removeItem("chronoTeam");stopClock();currentTeam=null;teamState=null;assigned=[];solved.clear();attempted.clear();cluesUsed.clear();setScore(0);
   $("missionView").classList.add("hidden");$("loginView").classList.remove("hidden");$("teamChip").classList.add("hidden");$("questionGrid").innerHTML="";$("completionPanel").classList.add("hidden");
 });
 async function restoreSession(){
